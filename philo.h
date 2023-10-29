@@ -25,7 +25,7 @@ typedef struct t_data {
     int             num_times_must_eat;
     long long       beginning_time;
     int             p_finish;
-    int             die;
+    int             done;
     philo_node      *philo_head;
     pthread_mutex_t *fork; // recources
     pthread_mutex_t lock; // mutex

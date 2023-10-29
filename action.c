@@ -37,8 +37,12 @@ void *philosopher_action(void *args)
     {
         // weten bij welke index je moet hebben. 
         // Think
+        if (data->done == 1)
+                pthread_exit(NULL);
         while (i < data->num_philosophers && data->p_finish != data->num_philosophers)
         {
+            if (data->done == 1)
+                EXIT_SUCCESS;
             eat(philo);
 
             sleep_philo(philo);
@@ -70,22 +74,23 @@ void eat(one_philo *philo)
     }
 
     philo->time_last_meal = timing();
-
+    printf("%lld\t%d\tis eating\n", get_current_time_ms() - philo->data->beginning_time, philo->philosopher_id);
     german_usleep(data->time_to_eat);
 
     philo->meals_finished++;
+    printf("philo: %d has eaten %d times\n", philo->philosopher_id, philo->meals_finished);
 
-    // if (philo->meals_finished == data->num_times_must_eat) // if 1 philo finished his meals
-    // {
-    //     philo->data->p_finish++;
-    //     if (philo->data->p_finish == data->num_philosophers) // if all philos finished their meals
-    //     {
-    //         pthread_mutex_unlock(&data->fork[philo->l_fork]);
-    //         pthread_mutex_unlock(&data->fork[philo->r_fork]);
+    if (philo->meals_finished == data->num_times_must_eat) // if 1 philo finished his meals
+    {
+        philo->data->p_finish++;
+        if (philo->data->p_finish == data->num_philosophers) // if all philos finished their meals
+        {
+            pthread_mutex_unlock(&data->fork[philo->l_fork]);
+            pthread_mutex_unlock(&data->fork[philo->r_fork]);
 
-    //         return ;
-    //     }
-    // }
+            return ;
+        }
+    }
 
     pthread_mutex_unlock(&data->fork[philo->l_fork]);
     pthread_mutex_unlock(&data->fork[philo->r_fork]);
@@ -137,30 +142,28 @@ void *check_philosopher_death(void *args)
     gen_data *data = philo->data;
     while (1)
     {
-    if (philo->data->p_finish == philo->data->num_philosophers)
+    if (philo->data->p_finish == philo->data->num_philosophers) // all philo finished eating
     {
-        return NULL;
+        printf("all philos are finished eating\n");
+        data->done = 1;
+        EXIT_SUCCESS;
     }
-        pthread_mutex_lock(&data->lock);
-        long long current_time = time_diff(data->beginning_time, timing());
-        long long time_since_last_meal = time_diff(philo->time_last_meal, current_time);
-        printf("philo : %d\ttime since last meal: %lld\n", philo->philosopher_id, time_since_last_meal);
-        printf("time to die: %lld\n", data->time_to_die);
-        if (time_since_last_meal > data->time_to_die)
-        {
-            printf("philo : %lld\ttime since last meal: %lld\n", timing() - philo->philosopher_id, time_since_last_meal);
-			printf("time to die: %lld", data->time_to_die);
-            if (data->die == 0)
-            {
-                printf("%lld\t%d\tdied\n", current_time - data->beginning_time, philo->philosopher_id);
-                data->die = 1;
-            }
-            // pthread_mutex_lock(&data.);
-            pthread_mutex_unlock(&data->lock);
-            exit(0); // Exit the program if a philosopher dies
-        }
-        else
-            pthread_mutex_unlock(&data->lock);
+
+    pthread_mutex_lock(&data->lock);
+    //long long current_time = time_diff(data->beginning_time, timing());
+
+    if ((philo->time_last_meal - data->beginning_time) > data->time_to_die)
+    {
+            printf("%lld\t%d\tdied of hunger\n", timing() - data->beginning_time, philo->philosopher_id);
+            data->done = 1;
+            pthread_exit(NULL);
+            
+        // pthread_mutex_lock(&data.);
+        pthread_mutex_unlock(&data->lock);
+        //EXIT_SUCCESS ;// Exit the program if a philosopher dies
+    }
+    else
+        pthread_mutex_unlock(&data->lock);
     }
     return NULL;
 }

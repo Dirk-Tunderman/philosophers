@@ -47,7 +47,8 @@ int init_data(char *argv[], gen_data *data)
     data->time_to_die = long_atoi(argv[2]);
     data->time_to_eat = long_atoi(argv[3]);
     data->time_to_sleep = long_atoi(argv[4]);
-    data->die           = 0;
+
+    data->done           = 0;
     data->p_finish = 0;
     if (argv[5])
         data->num_times_must_eat = atoi(argv[5]);
